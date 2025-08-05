@@ -4,22 +4,25 @@
 RTC_DS3231 rtc;
 
 // Pin relay
-const int relayLampu = 8;
-const int relayRaket = 9;
+const int lampu = 8;
+const int raket = 9;
 
 // Pin LDR
-const int ldrWaktu = 10;
+const int ldr = 10;
 
 void setup() {
   Serial.begin(9600);
 
-  pinMode(relayLampu, OUTPUT);
-  pinMode(relayRaket, OUTPUT);
-  pinMode(ldrWaktu, INPUT_PULLUP);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);
+
+  pinMode(lampu, OUTPUT);
+  pinMode(raket, OUTPUT);
+  pinMode(ldr, INPUT_PULLUP);
 
   // Matikan semua relay (HIGH = mati, karena aktif LOW)
-  digitalWrite(relayLampu, HIGH);
-  digitalWrite(relayRaket, HIGH);
+  digitalWrite(lampu, HIGH);
+  digitalWrite(raket, HIGH);
 
   while (!rtc.begin()) {
     Serial.println("RTC tidak ditemukan!");
@@ -43,18 +46,18 @@ void loop() {
   Serial.print(":");
   Serial.println(menit);
 
-  uint8_t gelap = digitalRead(ldrWaktu);
+  uint8_t gelap = digitalRead(ldr);
   Serial.println(gelap ? "Gelap" : "Terang");
 
   // Menyala dari jam 18:00 sampai 04:59
   // dan menyala kalau sudah gelap
   if (jam >= 18 || jam < 5) {
     if (gelap)
-      digitalWrite(relayLampu, LOW),
-      digitalWrite(relayRaket, LOW);
+      digitalWrite(lampu, LOW),
+      digitalWrite(raket, LOW);
   } else {
-    digitalWrite(relayLampu, HIGH);
-    digitalWrite(relayRaket, HIGH);
+    digitalWrite(lampu, HIGH);
+    digitalWrite(raket, HIGH);
   }
 
   // Periksa setiap 5 detik
