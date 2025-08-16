@@ -11,6 +11,9 @@ const int relay_raket = 9;
 const int ldr_waktu = 10;
 const int ldr_lampu = 11;
 
+// Pin untuk notifikasi
+const int buzzer = 12;
+
 void setup() {
   Serial.begin(9600);
 
@@ -21,6 +24,7 @@ void setup() {
   pinMode(relay_raket, OUTPUT);
   pinMode(ldr_waktu, INPUT_PULLUP);
   pinMode(ldr_lampu, INPUT_PULLUP);
+  pinMode(buzzer, OUTPUT);
 
   // Matikan semua relay (HIGH = mati, karena aktif LOW)
   digitalWrite(relay_lampu, HIGH);
@@ -38,8 +42,10 @@ void setup() {
 }
 
 void loop() {
-  DateTime now = rtc.now();
+  // Periksa setiap 1 detik
+  delay(1000);
 
+  DateTime now = rtc.now();
   uint8_t jam = now.hour();
   uint8_t menit = now.minute();
 
@@ -48,24 +54,42 @@ void loop() {
   Serial.print(":");
   Serial.println(menit);
 
-  uint8_t gelap = digitalRead(ldr_waktu);
-  uint8_t nonaktif = digitalRead(ldr_lampu);
+  uint8_t terang = !digitalRead(ldr_waktu);
+  uint8_t aktif = !digitalRead(ldr_lampu);
 
-  Serial.println(gelap ? "Gelap" : "Terang");
+  Serial.println(terang ? "Terang": "Gelap");
   Serial.print("Lampu UV ");
-  Serial.println(nonaktif ? "Non-Aktif" : "Aktif");
+  Serial.println(aktif ? "Aktif" : "Non-Aktif");
 
-  // Menyala dari jam 18:00 sampai 04:59
-  if (jam >= 18 || jam < 5) {
-    // tidak akan menyala kalau belum gelap
-    if (!gelap) goto _;
-    digitalWrite(relay_lampu, LOW),
-    digitalWrite(relay_raket, LOW);
-  } else {
+  // Menyala hanya dari pukul 18:00 sampai 04:59
+  if (jam >= 5 || jam < 18) {
     digitalWrite(relay_lampu, HIGH);
     digitalWrite(relay_raket, HIGH);
+    return;
   }
 
-  // Periksa setiap 1 detik
-  _: delay(1000);
+  // tidak akan menyala kalau masih terang
+  if (terang) return;
+
+  // Menyalakan elektrokusi dan lampu UV
+  digitalWrite(relay_lampu, LOW);
+  digitalWrite(relay_raket, LOW);
+  delay(300);
+
+  // Lampu berhasil dinyalakan
+  if (aktif && !digitalRead(relay_lampu)) {
+    Serial.println("Lampu berhasil dinyalakan");
+    return;
+  }
+
+  // Lampu gagal menyala
+  Serial.println("Lampu gagal dinyalakan");
+
+  // Menyalakan notifikasi
+  for (uint8_t i = 0; i < 5; i++) {
+    delay(200);
+    digitalWrite(buzzer, 1);
+    delay(200);
+    digitalWrite(buzzer, 0);
+  }
 }
