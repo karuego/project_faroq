@@ -4,11 +4,12 @@
 RTC_DS3231 rtc;
 
 // Pin relay
-const int lampu = 8;
-const int raket = 9;
+const int relay_lampu = 8;
+const int relay_raket = 9;
 
 // Pin LDR
-const int ldr = 10;
+const int ldr_waktu = 10;
+const int ldr_lampu = 11;
 
 void setup() {
   Serial.begin(9600);
@@ -16,13 +17,14 @@ void setup() {
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
 
-  pinMode(lampu, OUTPUT);
-  pinMode(raket, OUTPUT);
-  pinMode(ldr, INPUT_PULLUP);
+  pinMode(relay_lampu, OUTPUT);
+  pinMode(relay_raket, OUTPUT);
+  pinMode(ldr_waktu, INPUT_PULLUP);
+  pinMode(ldr_lampu, INPUT_PULLUP);
 
   // Matikan semua relay (HIGH = mati, karena aktif LOW)
-  digitalWrite(lampu, HIGH);
-  digitalWrite(raket, HIGH);
+  digitalWrite(relay_lampu, HIGH);
+  digitalWrite(relay_raket, HIGH);
 
   while (!rtc.begin()) {
     Serial.println("RTC tidak ditemukan!");
@@ -46,20 +48,24 @@ void loop() {
   Serial.print(":");
   Serial.println(menit);
 
-  uint8_t gelap = digitalRead(ldr);
+  uint8_t gelap = digitalRead(ldr_waktu);
+  uint8_t nonaktif = digitalRead(ldr_lampu);
+
   Serial.println(gelap ? "Gelap" : "Terang");
+  Serial.print("Lampu UV ");
+  Serial.println(nonaktif ? "Non-Aktif" : "Aktif");
 
   // Menyala dari jam 18:00 sampai 04:59
-  // dan menyala kalau sudah gelap
   if (jam >= 18 || jam < 5) {
-    if (gelap)
-      digitalWrite(lampu, LOW),
-      digitalWrite(raket, LOW);
+    // tidak akan menyala kalau belum gelap
+    if (!gelap) goto _;
+    digitalWrite(relay_lampu, LOW),
+    digitalWrite(relay_raket, LOW);
   } else {
-    digitalWrite(lampu, HIGH);
-    digitalWrite(raket, HIGH);
+    digitalWrite(relay_lampu, HIGH);
+    digitalWrite(relay_raket, HIGH);
   }
 
-  // Periksa setiap 5 detik
-  delay(1000);
+  // Periksa setiap 1 detik
+  _: delay(1000);
 }
