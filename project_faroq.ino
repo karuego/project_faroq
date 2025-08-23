@@ -58,10 +58,10 @@ void loop() {
   Serial.println(menit);
 
   uint8_t terang = !digitalRead(ldr_waktu);
-  // Serial.println(terang ? "Terang": "Gelap");
+  Serial.println(terang ? "Terang": "Gelap");
 
   // Sistem akan mati jika waktu berada direntang 05:00 sampai dengan 17:59
-  if (jam >= 5 || jam < 18) {
+  if (jam >= 5 && jam < 18) {
     digitalWrite(relay_lampu, HIGH);
     digitalWrite(relay_raket, HIGH);
     return;
