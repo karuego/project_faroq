@@ -38,11 +38,14 @@ void setup() {
   // Gunakan ini hanya sekali untuk mengatur waktu RTC sesuai waktu komputer
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
+  // Cek lampu UV
+  cek_uv();
+
   Serial.println("Sistem siap 😁👍👍🏻...");
 }
 
 void loop() {
-  // Periksa setiap 1 detik
+  // Jeda selama 1 detik
   delay(1000);
 
   DateTime now = rtc.now();
@@ -55,13 +58,9 @@ void loop() {
   Serial.println(menit);
 
   uint8_t terang = !digitalRead(ldr_waktu);
-  uint8_t aktif = !digitalRead(ldr_lampu);
+  // Serial.println(terang ? "Terang": "Gelap");
 
-  Serial.println(terang ? "Terang": "Gelap");
-  Serial.print("Lampu UV ");
-  Serial.println(aktif ? "Aktif" : "Non-Aktif");
-
-  // Menyala hanya dari pukul 18:00 sampai 04:59
+  // Sistem akan mati jika waktu berada direntang 05:00 sampai dengan 17:59
   if (jam >= 5 || jam < 18) {
     digitalWrite(relay_lampu, HIGH);
     digitalWrite(relay_raket, HIGH);
@@ -74,22 +73,41 @@ void loop() {
   // Menyalakan elektrokusi dan lampu UV
   digitalWrite(relay_lampu, LOW);
   digitalWrite(relay_raket, LOW);
-  delay(300);
+}
 
-  // Lampu berhasil dinyalakan
-  if (aktif && !digitalRead(relay_lampu)) {
-    Serial.println("Lampu berhasil dinyalakan");
+// Memeriksa lampu UV
+void cek_uv() {
+  // Menyalakan lampu UV
+  digitalWrite(relay_lampu, LOW);
+  delay(3000);
+
+  // Memeriksa LDR
+  uint8_t aktif = !digitalRead(ldr_lampu);
+
+  Serial.print(F("Lampu UV "));
+
+  if (aktif) {
+    Serial.println(F("berfungsi dengan baik!"));
+    digitalWrite(relay_lampu, HIGH);
     return;
   }
 
-  // Lampu gagal menyala
-  Serial.println("Lampu gagal dinyalakan");
+  Serial.println(F("tidak berfungsi / rusak !"));
+  Serial.println(F("Silahkan periksa sistem dan lakukan reset pada board Arduino!"));
 
-  // Menyalakan notifikasi
-  for (uint8_t i = 0; i < 5; i++) {
-    delay(200);
-    digitalWrite(buzzer, 1);
-    delay(200);
-    digitalWrite(buzzer, 0);
+  // Menyalakan notifikasi selamanya
+  const int buzz_delay = 5;
+  while (1) {
+    for (int freq = 500; freq <= 1000; freq += 10) {
+      tone(buzzer, freq);
+      delay(buzz_delay);
+    }
+    // noTone(buzzer);
+
+    for (int freq = 51000; freq >= 500; freq -= 10) {
+      tone(buzzer, freq);
+      delay(buzz_delay);
+    }
+    // noTone(buzzer);
   }
 }
